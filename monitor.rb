@@ -11,6 +11,8 @@ require 'uri'
 
 Dotenv.load
 
+LOGGER_METHODS = %w(log debug info warn error fatal unknown)
+
 # Logger Multiplexer.
 # https://stackoverflow.com/questions/6407141/how-can-i-have-ruby-logger-log-output-to-stdout-as-well-as-file
 class MultiLogger
@@ -18,16 +20,16 @@ class MultiLogger
     @targets = targets
   end
 
-  %w(log debug info warn error fatal unknown).each do |m|
+  LOGGER_METHODS.each do |m|
     define_method(m) do |*args, &blk|
-      @targets.each { |t| t.send(m, *args, &blk) }
+      @targets.each { |t| t.public_send(m, *args, &blk) }
     end
   end
 end
 
 # Dummy logger
 class DummyLogger
-  %w(log debug info warn error fatal unknown).each do |m|
+  LOGGER_METHODS.each do |m|
     define_method(m) do |*args, &blk|
       # noop
     end
