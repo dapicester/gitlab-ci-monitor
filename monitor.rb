@@ -7,7 +7,6 @@ require 'dotenv'
 require 'json'
 require 'logger'
 require 'net/http'
-require 'null_logger'
 require 'uri'
 
 Dotenv.load
@@ -26,6 +25,15 @@ class MultiLogger
   end
 end
 
+# Dummy logger
+class DummyLogger
+  %w(log debug info warn error fatal unknown).each do |m|
+    define_method(m) do |*args, &blk|
+      # noop
+    end
+  end
+end
+
 # Fetches build info from Gitlab API.
 class BuildFetcher
   BASE_URI = 'https://gitlab.com/api/v3'
@@ -35,8 +43,8 @@ class BuildFetcher
 
   class ServerError < StandardError; end
 
-  def initialize(logger = nil)
-    @logger = logger || NullLogger.new
+  def initialize(logger = DummyLogger.new)
+    @logger = logger
     @uri = URI "#{BASE_URI}/projects/#{GITLAB_PROJECT_ID}/pipelines"
   end
 
@@ -80,8 +88,8 @@ class LedMonitor
 
   BUZZER = 5
 
-  def initialize(logger = nil)
-    @logger = logger || NullLogger.new
+  def initialize(logger = DummyLogger.new)
+    @logger = logger
 
     @logger.debug { 'Connecting ...' }
     @arduino = ArduinoFirmata.connect
