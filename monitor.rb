@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 require 'arduino_firmata'
 require 'colorize'
@@ -122,7 +123,7 @@ end
 
 # Use LEDs to monitor the last build status.
 class BuildMonitor
-  def initialize(interval, logger = nil)
+  def initialize(interval)
     @interval = interval.to_i
 
     stdout_logger = Logger.new STDOUT
@@ -130,7 +131,7 @@ class BuildMonitor
     stdout_logger.level = file_logger.level = Logger::INFO unless ENV['DEBUG']
     @logger = MultiLogger.new file_logger, stdout_logger
 
-    @status = 'success'  # assume we are in a good state
+    @status = 'success' # assume we are in a good state
   end
 
   def start
