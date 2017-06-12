@@ -1,7 +1,58 @@
 require 'test_helper'
 
 class LedMonitorTest < Minitest::Test
-  def test_it_works
-    skip 'TODO, mock ArduinoFirmata'
+  def setup
+    @arduino = Minitest::Mock.new
+    LedMonitor::LEDS.values.each { |pin| expect_digital_write pin, true }
+    @subject = LedMonitor.new @arduino
+  end
+
+  def test_close
+    @arduino.expect :close, nil
+    @subject.close
+  end
+
+  def test_all_off
+    LedMonitor::LEDS.values.each { |pin| expect_digital_write pin, false }
+    @subject.all_off
+  end
+
+  def test_turn_on
+    # valid name
+    LedMonitor::LEDS.each do |name, pin|
+      @arduino.expect :digital_write, nil, [pin, true]
+      @subject.turn_on name
+    end
+
+    # TODO: invalid name
+  end
+
+  def test_buzz
+    # TODO: no sleep
+
+    expect_buzz
+    @subject.buzz
+  end
+
+  def rapid_buzz
+    # TODO: no sleep
+
+    2.times { expect_buzz }
+    @subject.buzz
+
+    n = 4
+    n.times { expect_buzz }
+    @subject.buzz n
+  end
+
+  private
+
+  def expect_digital_write(pin, value)
+    @arduino.expect :digital_write, nil, [pin, value]
+  end
+
+  def expect_buzz
+    expect_digital_write LedMonitor::BUZZER, true
+    expect_digital_write LedMonitor::BUZZER, false
   end
 end

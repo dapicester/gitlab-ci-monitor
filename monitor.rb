@@ -88,11 +88,11 @@ class LedMonitor
 
   BUZZER = 5
 
-  def initialize(logger = DummyLogger.new)
+  def initialize(arduino = nil, logger = DummyLogger.new)
     @logger = logger
 
     @logger.debug { 'Connecting ...' }
-    @arduino = ArduinoFirmata.connect
+    @arduino = arduino || ArduinoFirmata.connect
 
     @logger.info { "Connected with Firmata version #{@arduino.version}" }
     LEDS.keys.each { |led| turn_on led }
