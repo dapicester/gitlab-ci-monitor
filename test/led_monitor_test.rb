@@ -28,21 +28,23 @@ class LedMonitorTest < Minitest::Test
   end
 
   def test_buzz
-    # TODO: no sleep
-
-    expect_buzz
-    @subject.buzz
+    # TODO: assert on sleep
+    stub_sleep do
+      expect_buzz
+      @subject.buzz
+    end
   end
 
   def rapid_buzz
-    # TODO: no sleep
+    # TODO: assert on sleep
+    stub_sleep do
+      2.times { expect_buzz }
+      @subject.buzz
 
-    2.times { expect_buzz }
-    @subject.buzz
-
-    n = 4
-    n.times { expect_buzz }
-    @subject.buzz n
+      n = 4
+      n.times { expect_buzz }
+      @subject.buzz n
+    end
   end
 
   private
@@ -54,5 +56,11 @@ class LedMonitorTest < Minitest::Test
   def expect_buzz
     expect_digital_write LedMonitor::BUZZER, true
     expect_digital_write LedMonitor::BUZZER, false
+  end
+
+  def stub_sleep
+    @subject.stub :sleep, nil do
+      yield
+    end
   end
 end
