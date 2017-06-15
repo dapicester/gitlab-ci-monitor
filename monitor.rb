@@ -68,14 +68,15 @@ class BuildFetcher
       raise ServerError, message
     end
 
-    pipelines = JSON.parse response.body
+    pipelines = JSON.parse response.body, symbolize_names: true
 
     # returned build are already sorted
-    last_build = pipelines.find { |el| el['ref'] == branch }
+    last_build = pipelines.find { |el| el[:ref] == branch }
     @logger.debug { "Last build on #{branch}: #{last_build.inspect.light_yellow}" }
 
     last_build
   rescue SocketError, Net::OpenTimeout => ex
+    # TODO: should raise NetworkError
     raise ServerError, ex
   end
 end
@@ -164,7 +165,7 @@ class BuildMonitor
     latest_build = @build_fetcher.latest_build
 
     @prev_status = @status unless pending?
-    @status = latest_build['status']
+    @status = latest_build[:status]
     led = case @status
           when 'success' then :green
           when 'failed'  then :red
@@ -176,10 +177,10 @@ class BuildMonitor
     @monitor.turn_on led
     if failed?
       @monitor.buzz if was_success?
-      @logger.info { "Blame: #{latest_build['sha'][0, 8].light_yellow} by #{latest_build['user']['name'].light_blue}" }
+      @logger.info { "Blame: #{latest_build[:sha][0, 8].light_yellow} by #{latest_build[:user][:name].light_blue}" }
     elsif success? && was_failed?
       @monitor.rapid_buzz
-      @logger.info { "Praise: #{latest_build['sha'][0, 8].light_yellow} by #{latest_build['user']['name'].light_blue}" }
+      @logger.info { "Praise: #{latest_build[:sha][0, 8].light_yellow} by #{latest_build[:user][:name].light_blue}" }
     end
   rescue BuildFetcher::ServerError => ex
     @logger.error ex.message

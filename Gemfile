@@ -8,4 +8,5 @@ gem 'dotenv'
 group :test do
   gem 'byebug'
   gem 'minitest'
+  gem 'webmock'
 end
