@@ -6,5 +6,6 @@ gem 'colorize'
 gem 'dotenv'
 
 group :test do
+  gem 'byebug'
   gem 'minitest'
 end
