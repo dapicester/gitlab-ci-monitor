@@ -134,21 +134,23 @@ end
 
 # Use LEDs to monitor the last build status.
 class BuildMonitor
-  def initialize(interval)
+  def initialize(interval, **options)
     @interval = interval.to_i
 
-    stdout_logger = Logger.new STDOUT
-    file_logger = Logger.new 'monitor.log', 'daily'
-    stdout_logger.level = file_logger.level = Logger::INFO unless ENV['DEBUG']
-    @logger = MultiLogger.new file_logger, stdout_logger
+    @logger = options.fetch(:logger) do
+      stdout_logger = Logger.new STDOUT
+      file_logger = Logger.new 'monitor.log', 'daily'
+      stdout_logger.level = file_logger.level = Logger::INFO unless ENV['DEBUG']
+      MultiLogger.new file_logger, stdout_logger
+    end
+
+    @monitor = options.fetch(:led_monitor) { LedMonitor.new @logger }
+    @build_fetcher = options.fetch(:build_fetcher) { BuildFetcher.new @logger }
 
     @status = 'success' # assume we are in a good state
   end
 
   def start
-    @monitor = LedMonitor.new @logger
-    @build_fetcher = BuildFetcher.new @logger
-
     trap('SIGINT') do
       @monitor.close
       puts 'Bye!'
