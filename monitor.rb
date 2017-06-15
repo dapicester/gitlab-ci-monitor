@@ -44,6 +44,7 @@ class BuildFetcher
   GITLAB_PROJECT_ID = ENV.fetch('GITLAB_PROJECT_ID')
 
   class ServerError < StandardError; end
+  class NetworkError < StandardError; end
 
   def initialize(logger = DummyLogger.new)
     @logger = logger
@@ -76,8 +77,7 @@ class BuildFetcher
 
     last_build
   rescue SocketError, Net::OpenTimeout => ex
-    # TODO: should raise NetworkError
-    raise ServerError, ex
+    raise NetworkError, ex
   end
 end
 
@@ -182,7 +182,7 @@ class BuildMonitor
       @monitor.rapid_buzz
       @logger.info { "Praise: #{latest_build[:sha][0, 8].light_yellow} by #{latest_build[:user][:name].light_blue}" }
     end
-  rescue BuildFetcher::ServerError => ex
+  rescue BuildFetcher::ServerError, BuildFetcher::NetworkError => ex
     @logger.error ex.message
     @monitor.all_off
     %i(yellow red).each { |ld| @monitor.turn_on ld }

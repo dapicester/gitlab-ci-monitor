@@ -40,7 +40,7 @@ class BuildFetcherTest < Minitest::Test
     [SocketError, Net::OpenTimeout].each do |exception|
       stub_request(:any, @url).to_raise(exception)
 
-      assert_raises(BuildFetcher::ServerError) do
+      assert_raises(BuildFetcher::NetworkError) do
         @subject.latest_build
       end
     end
