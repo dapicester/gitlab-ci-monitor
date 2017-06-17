@@ -46,7 +46,7 @@ class BuildFetcher
   class ServerError < StandardError; end
   class NetworkError < StandardError; end
 
-  def initialize(logger = DummyLogger.new)
+  def initialize(logger: DummyLogger.new)
     @logger = logger
     @uri = URI "#{BASE_URI}/projects/#{GITLAB_PROJECT_ID}/pipelines"
   end
@@ -145,7 +145,7 @@ class BuildMonitor
     end
 
     @monitor = options.fetch(:led_monitor) { LedMonitor.new @logger }
-    @build_fetcher = options.fetch(:build_fetcher) { BuildFetcher.new @logger }
+    @build_fetcher = options.fetch(:build_fetcher) { BuildFetcher.new logger: @logger }
 
     @status = 'success' # assume we are in a good state
   end
