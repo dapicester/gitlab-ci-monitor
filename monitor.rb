@@ -11,7 +11,7 @@ require 'uri'
 
 Dotenv.load
 
-LOGGER_METHODS = %w(log debug info warn error fatal unknown)
+LOGGER_METHODS = %w(log debug info warn error fatal unknown).freeze
 
 # Logger Multiplexer.
 # https://stackoverflow.com/questions/6407141/how-can-i-have-ruby-logger-log-output-to-stdout-as-well-as-file
@@ -134,7 +134,7 @@ class LedMonitor
     @arduino.digital_write BUZZER, false
   end
 
-  def rapid_buzz(count = 2, duration = 0.05)
+  def rapid_buzz(count: 2, duration: 0.05)
     @logger.debug { "Buzzing #{count} times" }
     count.times do
       buzz duration
@@ -145,7 +145,7 @@ end
 
 # Use LEDs to monitor the last build status.
 class BuildMonitor
-  def initialize(interval, **options)
+  def initialize(interval:, **options)
     @interval = interval.to_i
 
     @logger = options.fetch(:logger) do
@@ -165,6 +165,7 @@ class BuildMonitor
     trap('SIGINT') do
       @monitor.close!
       puts 'Bye!'
+      # TODO: use exit with at_exit signal handlers
       exit!
     end
 
@@ -229,6 +230,6 @@ end
 
 if __FILE__ == $PROGRAM_NAME
   interval = ARGV.shift || 120
-  monitor = BuildMonitor.new interval
+  monitor = BuildMonitor.new interval: interval
   monitor.start
 end
