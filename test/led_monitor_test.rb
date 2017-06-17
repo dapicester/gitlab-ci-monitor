@@ -3,7 +3,7 @@ require 'test_helper'
 class LedMonitorTest < Minitest::Test
   def setup
     @arduino = Minitest::Mock.new
-    LedMonitor::LEDS.values.each { |pin| expect_digital_write pin, true }
+    with_all_leds { |_, pin| expect_digital_write pin, true }
     @subject = LedMonitor.new { @arduino }
   end
 
@@ -13,14 +13,14 @@ class LedMonitorTest < Minitest::Test
   end
 
   def test_all_off
-    LedMonitor::LEDS.values.each { |pin| expect_digital_write pin, false }
+    with_all_leds { |_, pin| expect_digital_write pin, false }
     @subject.all_off
   end
 
   def test_turn_on
     # valid name
-    LedMonitor::LEDS.each do |name, pin|
-      @arduino.expect :digital_write, nil, [pin, true]
+    with_all_leds do |name, pin|
+      expect_digital_write pin, true
       @subject.turn_on name
     end
 
@@ -48,6 +48,10 @@ class LedMonitorTest < Minitest::Test
   end
 
   private
+
+  def with_all_leds(&blk)
+    LedMonitor::LEDS.each(&blk)
+  end
 
   def expect_digital_write(pin, value)
     @arduino.expect :digital_write, nil, [pin, value]
