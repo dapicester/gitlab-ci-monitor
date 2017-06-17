@@ -11,6 +11,8 @@ require 'uri'
 
 Dotenv.load
 
+LOGGER_METHODS = %w(log debug info warn error fatal unknown).freeze
+
 # Logger Multiplexer.
 # https://stackoverflow.com/questions/6407141/how-can-i-have-ruby-logger-log-output-to-stdout-as-well-as-file
 class MultiLogger
@@ -18,16 +20,16 @@ class MultiLogger
     @targets = targets
   end
 
-  %w(log debug info warn error fatal unknown).each do |m|
+  LOGGER_METHODS.each do |m|
     define_method(m) do |*args, &blk|
-      @targets.each { |t| t.send(m, *args, &blk) }
+      @targets.each { |t| t.public_send(m, *args, &blk) }
     end
   end
 end
 
 # Dummy logger
 class DummyLogger
-  %w(log debug info warn error fatal unknown).each do |m|
+  LOGGER_METHODS.each do |m|
     define_method(m) do |*args, &blk|
       # noop
     end
@@ -42,8 +44,9 @@ class BuildFetcher
   GITLAB_PROJECT_ID = ENV.fetch('GITLAB_PROJECT_ID')
 
   class ServerError < StandardError; end
+  class NetworkError < StandardError; end
 
-  def initialize(logger = DummyLogger.new)
+  def initialize(logger: DummyLogger.new)
     @logger = logger
     @uri = URI "#{BASE_URI}/projects/#{GITLAB_PROJECT_ID}/pipelines"
   end
@@ -58,7 +61,7 @@ class BuildFetcher
       http.request request
     end
 
-    @logger.debug { @response }
+    @logger.debug { response }
 
     if response.code.to_i != 200
       @logger.debug { response.body.inspect.light_yellow }
@@ -66,15 +69,15 @@ class BuildFetcher
       raise ServerError, message
     end
 
-    pipelines = JSON.parse response.body
+    pipelines = JSON.parse response.body, symbolize_names: true
 
     # returned build are already sorted
-    last_build = pipelines.find { |el| el['ref'] == branch }
+    last_build = pipelines.find { |el| el[:ref] == branch }
     @logger.debug { "Last build on #{branch}: #{last_build.inspect.light_yellow}" }
 
     last_build
   rescue SocketError, Net::OpenTimeout => ex
-    raise ServerError, ex
+    raise NetworkError, ex
   end
 end
 
@@ -88,11 +91,15 @@ class LedMonitor
 
   BUZZER = 5
 
-  def initialize(logger = DummyLogger.new)
+  def initialize(logger: DummyLogger.new)
     @logger = logger
 
-    @logger.debug { 'Connecting ...' }
-    @arduino = ArduinoFirmata.connect
+    if block_given?
+      @arduino = yield
+    else
+      @logger.debug { 'Connecting to arduino ...' }
+      @arduino = ArduinoFirmata.connect
+    end
 
     @logger.info { "Connected with Firmata version #{@arduino.version}" }
     LEDS.keys.each { |led| turn_on led }
@@ -100,6 +107,13 @@ class LedMonitor
 
   def close
     @logger.debug { 'Closing Firmata connection' }
+    @arduino.close
+  end
+
+  def close!
+    # workaround for "log writing failed. can't be called from trap context"
+    LEDS.values.each { |pin| @arduino.digital_write pin, false }
+    sleep 0.1
     @arduino.close
   end
 
@@ -120,7 +134,7 @@ class LedMonitor
     @arduino.digital_write BUZZER, false
   end
 
-  def rapid_buzz(count = 2, duration = 0.05)
+  def rapid_buzz(count: 2, duration: 0.05)
     @logger.debug { "Buzzing #{count} times" }
     count.times do
       buzz duration
@@ -131,24 +145,27 @@ end
 
 # Use LEDs to monitor the last build status.
 class BuildMonitor
-  def initialize(interval)
+  def initialize(interval:, **options)
     @interval = interval.to_i
 
-    stdout_logger = Logger.new STDOUT
-    file_logger = Logger.new 'monitor.log', 'daily'
-    stdout_logger.level = file_logger.level = Logger::INFO unless ENV['DEBUG']
-    @logger = MultiLogger.new file_logger, stdout_logger
+    @logger = options.fetch(:logger) do
+      stdout_logger = Logger.new STDOUT
+      file_logger = Logger.new 'monitor.log', 'daily'
+      stdout_logger.level = file_logger.level = Logger::INFO unless ENV['DEBUG']
+      MultiLogger.new file_logger, stdout_logger
+    end
+
+    @monitor = options.fetch(:led_monitor) { LedMonitor.new logger: @logger }
+    @build_fetcher = options.fetch(:build_fetcher) { BuildFetcher.new logger: @logger }
 
     @status = 'success' # assume we are in a good state
   end
 
   def start
-    @monitor = LedMonitor.new @logger
-    @build_fetcher = BuildFetcher.new @logger
-
     trap('SIGINT') do
-      @monitor.close
+      @monitor.close!
       puts 'Bye!'
+      # TODO: use exit with at_exit signal handlers
       exit!
     end
 
@@ -162,7 +179,7 @@ class BuildMonitor
     latest_build = @build_fetcher.latest_build
 
     @prev_status = @status unless pending?
-    @status = latest_build['status']
+    @status = latest_build[:status]
     led = case @status
           when 'success' then :green
           when 'failed'  then :red
@@ -174,12 +191,12 @@ class BuildMonitor
     @monitor.turn_on led
     if failed?
       @monitor.buzz if was_success?
-      @logger.info { "Blame: #{latest_build['sha'][0, 8].light_yellow} by #{latest_build['user']['name'].light_blue}" }
+      @logger.info { "Blame: #{latest_build[:sha][0, 8].light_yellow} by #{latest_build[:user][:name].light_blue}" }
     elsif success? && was_failed?
       @monitor.rapid_buzz
-      @logger.info { "Praise: #{latest_build['sha'][0, 8].light_yellow} by #{latest_build['user']['name'].light_blue}" }
+      @logger.info { "Praise: #{latest_build[:sha][0, 8].light_yellow} by #{latest_build[:user][:name].light_blue}" }
     end
-  rescue BuildFetcher::ServerError => ex
+  rescue BuildFetcher::ServerError, BuildFetcher::NetworkError => ex
     @logger.error ex.message
     @monitor.all_off
     %i(yellow red).each { |ld| @monitor.turn_on ld }
@@ -213,6 +230,6 @@ end
 
 if __FILE__ == $PROGRAM_NAME
   interval = ARGV.shift || 120
-  monitor = BuildMonitor.new interval
+  monitor = BuildMonitor.new interval: interval
   monitor.start
 end
