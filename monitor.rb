@@ -110,6 +110,13 @@ class LedMonitor
     @arduino.close
   end
 
+  def close!
+    # workaround for "log writing failed. can't be called from trap context"
+    LEDS.values.each { |pin| @arduino.digital_write pin, false }
+    sleep 0.1
+    @arduino.close
+  end
+
   def all_off
     @logger.debug { 'Turning off all leds' }
     LEDS.values.each { |pin| @arduino.digital_write pin, false }
@@ -156,7 +163,7 @@ class BuildMonitor
 
   def start
     trap('SIGINT') do
-      @monitor.close
+      @monitor.close!
       puts 'Bye!'
       exit!
     end

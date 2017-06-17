@@ -12,6 +12,15 @@ class LedMonitorTest < Minitest::Test
     @subject.close
   end
 
+  def test_close!
+    # TODO: assert on sleep
+    stub_sleep do
+      @arduino.expect :close, nil
+      with_all_leds { |_, pin| expect_digital_write pin, false }
+      @subject.close
+    end
+  end
+
   def test_all_off
     with_all_leds { |_, pin| expect_digital_write pin, false }
     @subject.all_off
