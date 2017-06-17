@@ -61,7 +61,7 @@ class BuildFetcher
       http.request request
     end
 
-    @logger.debug { @response }
+    @logger.debug { response }
 
     if response.code.to_i != 200
       @logger.debug { response.body.inspect.light_yellow }
@@ -97,7 +97,7 @@ class LedMonitor
     if block_given?
       @arduino = yield
     else
-      @logger.debug { 'Connecting ...' }
+      @logger.debug { 'Connecting to arduino ...' }
       @arduino = ArduinoFirmata.connect
     end
 
