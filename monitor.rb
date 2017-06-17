@@ -91,11 +91,15 @@ class LedMonitor
 
   BUZZER = 5
 
-  def initialize(arduino = nil, logger = DummyLogger.new)
+  def initialize(logger: DummyLogger.new)
     @logger = logger
 
-    @logger.debug { 'Connecting ...' }
-    @arduino = arduino || ArduinoFirmata.connect
+    if block_given?
+      @arduino = yield
+    else
+      @logger.debug { 'Connecting ...' }
+      @arduino = ArduinoFirmata.connect
+    end
 
     @logger.info { "Connected with Firmata version #{@arduino.version}" }
     LEDS.keys.each { |led| turn_on led }
@@ -144,7 +148,7 @@ class BuildMonitor
       MultiLogger.new file_logger, stdout_logger
     end
 
-    @monitor = options.fetch(:led_monitor) { LedMonitor.new @logger }
+    @monitor = options.fetch(:led_monitor) { LedMonitor.new logger: @logger }
     @build_fetcher = options.fetch(:build_fetcher) { BuildFetcher.new logger: @logger }
 
     @status = 'success' # assume we are in a good state

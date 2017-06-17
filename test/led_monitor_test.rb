@@ -4,7 +4,7 @@ class LedMonitorTest < Minitest::Test
   def setup
     @arduino = Minitest::Mock.new
     LedMonitor::LEDS.values.each { |pin| expect_digital_write pin, true }
-    @subject = LedMonitor.new @arduino
+    @subject = LedMonitor.new { @arduino }
   end
 
   def test_close
