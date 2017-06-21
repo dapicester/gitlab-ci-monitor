@@ -97,8 +97,10 @@ class LedMonitor
     if block_given?
       @arduino = yield
     else
+      #:nocov:
       @logger.debug { 'Connecting to arduino ...' }
       @arduino = ArduinoFirmata.connect
+      # :nocov:
     end
 
     @logger.info { "Connected with Firmata version #{@arduino.version}" }
@@ -110,12 +112,14 @@ class LedMonitor
     @arduino.close
   end
 
+  # :nocov:
   def close!
     # workaround for "log writing failed. can't be called from trap context"
     LEDS.values.each { |pin| @arduino.digital_write pin, false }
     sleep 0.1
     @arduino.close
   end
+  # :nocov:
 
   def all_off
     @logger.debug { 'Turning off all leds' }
@@ -149,10 +153,12 @@ class BuildMonitor
     @interval = interval.to_i
 
     @logger = options.fetch(:logger) do
+      # :nocov:
       stdout_logger = Logger.new STDOUT
       file_logger = Logger.new 'monitor.log', 'daily'
       stdout_logger.level = file_logger.level = Logger::INFO unless ENV['DEBUG']
       MultiLogger.new file_logger, stdout_logger
+      # :nocov:
     end
 
     @monitor = options.fetch(:led_monitor) { LedMonitor.new logger: @logger }
@@ -161,6 +167,7 @@ class BuildMonitor
     @status = 'success' # assume we are in a good state
   end
 
+  # :nocov:
   def start
     trap('SIGINT') do
       @monitor.close!
@@ -174,6 +181,7 @@ class BuildMonitor
       wait @interval
     end
   end
+  # :nocov:
 
   def check_latest
     latest_build = @build_fetcher.latest_build
@@ -222,14 +230,18 @@ class BuildMonitor
     @prev_status == 'failed'
   end
 
+  # :nocov:
   def wait(seconds)
     @logger.info { "Next check in #{seconds} secs" }
     sleep seconds
   end
+  # :nocov:
 end
 
+# :nocov:
 if __FILE__ == $PROGRAM_NAME
   interval = ARGV.shift || 120
   monitor = BuildMonitor.new interval: interval
   monitor.start
 end
+# :nocov:

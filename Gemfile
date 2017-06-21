@@ -8,5 +8,6 @@ gem 'dotenv'
 group :test do
   gem 'byebug'
   gem 'minitest'
+  gem 'simplecov', require: false
   gem 'webmock'
 end
