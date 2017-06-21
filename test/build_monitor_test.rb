@@ -67,13 +67,15 @@ class BuildMonitorTest < Minitest::Test
     }
   end
 
-  def with_latest(status)
-    build = status.is_a?(Symbol) ? get_build(status) : status
-    @build_fetcher.expect :latest_build, build do
-      @led_monitor.expect :all_off, nil
-      yield
-      @subject.check_latest
+  def with_latest(status_or_callable)
+    if status_or_callable.respond_to? :call
+      @build_fetcher.expect :latest_build, nil, &status_or_callable
+    else
+      @build_fetcher.expect :latest_build, get_build(status_or_callable)
     end
+    @led_monitor.expect :all_off, nil
+    yield
+    @subject.check_latest
   end
 
   def expect_led(led)
