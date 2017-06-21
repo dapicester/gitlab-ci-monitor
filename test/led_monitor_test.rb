@@ -44,15 +44,15 @@ class LedMonitorTest < Minitest::Test
     end
   end
 
-  def rapid_buzz
+  def test_rapid_buzz
     # TODO: assert on sleep
     stub_sleep do
       2.times { expect_buzz }
-      @subject.buzz
+      @subject.rapid_buzz
 
       n = 4
       n.times { expect_buzz }
-      @subject.buzz n
+      @subject.rapid_buzz count: n
     end
   end
 
