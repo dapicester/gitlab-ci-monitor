@@ -1,3 +1,4 @@
 .env
+.ruby-version
 monitor.log*
 coverage/
