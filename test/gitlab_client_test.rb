@@ -37,7 +37,7 @@ class BuildFetcherTest < Minitest::Test
   end
 
   def test_latest_build_failure
-    [SocketError, Net::OpenTimeout].each do |exception|
+    [SocketError, Timeout::Error].each do |exception|
       stub_request(:any, @url).to_raise(exception)
 
       assert_raises(BuildFetcher::NetworkError) do

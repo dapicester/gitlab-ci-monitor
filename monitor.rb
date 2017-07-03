@@ -76,7 +76,7 @@ class BuildFetcher
     @logger.debug { "Last build on #{branch}: #{last_build.inspect.light_yellow}" }
 
     last_build
-  rescue SocketError, Net::OpenTimeout => ex
+  rescue SocketError, Timeout::Error => ex
     raise NetworkError, ex
   end
 end
