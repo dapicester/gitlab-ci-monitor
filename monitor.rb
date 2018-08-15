@@ -165,6 +165,7 @@ class BuildMonitor
     @build_fetcher = options.fetch(:build_fetcher) { BuildFetcher.new logger: @logger }
 
     @status = 'success' # assume we are in a good state
+    @error = false
   end
 
   # :nocov:
@@ -186,6 +187,7 @@ class BuildMonitor
   def check_latest
     latest_build = @build_fetcher.latest_build
 
+    @error = false
     @prev_status = @status unless pending?
     @status = latest_build[:status]
     led = case @status
@@ -208,6 +210,8 @@ class BuildMonitor
     @logger.error ex.message
     @monitor.all_off
     %i(yellow red).each { |ld| @monitor.turn_on ld }
+    @monitor.rapid_buzz count: 3, duration: 0.3 unless @error
+    @error = true
   end
 
   def failed?

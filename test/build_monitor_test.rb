@@ -27,7 +27,7 @@ class BuildMonitorTest < Minitest::Test
   def test_check_latest_failed
     with_latest :failed do
       expect_led :red
-      @led_monitor.expect :buzz, nil
+      expect_buzz
     end
 
     with_latest :pending do
@@ -41,7 +41,7 @@ class BuildMonitorTest < Minitest::Test
 
     with_latest :success do
       expect_led :green
-      @led_monitor.expect :rapid_buzz, nil
+      expect_rapid_buzz
     end
   end
 
@@ -49,6 +49,7 @@ class BuildMonitorTest < Minitest::Test
     [BuildFetcher::ServerError, BuildFetcher::NetworkError].each do |exception|
       with_latest -> { raise exception } do
         @led_monitor.expect :all_off, nil
+        expect_rapid_buzz count: 3, duration: 0.3
         expect_led :yellow
         expect_led :red
       end
@@ -80,5 +81,17 @@ class BuildMonitorTest < Minitest::Test
 
   def expect_led(led)
     @led_monitor.expect :turn_on, nil, [led]
+  end
+
+  def expect_buzz
+    @led_monitor.expect :buzz, nil
+  end
+
+  def expect_rapid_buzz(args = nil)
+    if args.nil?
+      @led_monitor.expect :rapid_buzz, nil
+    else
+      @led_monitor.expect :rapid_buzz, nil, [args]
+    end
   end
 end
