@@ -1,4 +1,7 @@
+require 'rake/clean'
 require 'rake/testtask'
+
+CLEAN << FileList['monitor.log.*']
 
 Rake::TestTask.new do |test|
   test.libs << %w(test)
