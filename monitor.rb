@@ -38,7 +38,7 @@ end
 
 # Fetches build info from Gitlab API.
 class BuildFetcher
-  BASE_URI = 'https://gitlab.com/api/v3'
+  BASE_URI = 'https://gitlab.com/api/v4'
 
   GITLAB_API_PRIVATE_TOKEN = ENV.fetch('GITLAB_API_PRIVATE_TOKEN')
   GITLAB_PROJECT_ID = ENV.fetch('GITLAB_PROJECT_ID')
