@@ -6,7 +6,9 @@ class BuildMonitorTest < Minitest::Test
     @led_monitor = Minitest::Mock.new
     @build_fetcher = Minitest::Mock.new
 
-    @subject = BuildMonitor.new interval: 120,
+    @subject = BuildMonitor.new 'project_id',
+                                'api_token',
+                                interval: 120,
                                 logger: @logger,
                                 led_monitor: @led_monitor,
                                 build_fetcher: @build_fetcher

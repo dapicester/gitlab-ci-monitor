@@ -40,15 +40,13 @@ end
 class BuildFetcher
   BASE_URI = 'https://gitlab.com/api/v4'
 
-  GITLAB_API_PRIVATE_TOKEN = ENV.fetch('GITLAB_API_PRIVATE_TOKEN')
-  GITLAB_PROJECT_ID = ENV.fetch('GITLAB_PROJECT_ID')
-
   class ServerError < StandardError; end
   class NetworkError < StandardError; end
 
-  def initialize(logger: DummyLogger.new)
+  def initialize(project_id, api_token, logger: DummyLogger.new)
+    @api_token = api_token
     @logger = logger
-    @uri = URI "#{BASE_URI}/projects/#{GITLAB_PROJECT_ID}/pipelines"
+    @uri = URI "#{BASE_URI}/projects/#{project_id}/pipelines"
   end
 
   def latest_build(branch = 'develop')
@@ -56,7 +54,7 @@ class BuildFetcher
 
     response = Net::HTTP.start(@uri.host, @uri.port, use_ssl: true) do |http|
       request = Net::HTTP::Get.new @uri
-      request.add_field 'PRIVATE-TOKEN', GITLAB_API_PRIVATE_TOKEN
+      request.add_field 'PRIVATE-TOKEN', @api_token
 
       http.request request
     end
@@ -149,7 +147,7 @@ end
 
 # Use LEDs to monitor the last build status.
 class BuildMonitor
-  def initialize(interval:, **options)
+  def initialize(project_id, api_token, interval:, **options)
     @interval = interval.to_i
 
     @logger = options.fetch(:logger) do
@@ -162,7 +160,7 @@ class BuildMonitor
     end
 
     @monitor = options.fetch(:led_monitor) { LedMonitor.new logger: @logger }
-    @build_fetcher = options.fetch(:build_fetcher) { BuildFetcher.new logger: @logger }
+    @build_fetcher = options.fetch(:build_fetcher) { BuildFetcher.new project_id, api_token, logger: @logger }
 
     @status = 'success' # assume we are in a good state
     @error = false
@@ -244,8 +242,11 @@ end
 
 # :nocov:
 if __FILE__ == $PROGRAM_NAME
+  project_id = ENV.fetch('GITLAB_PROJECT_ID')
+  api_token = ENV.fetch('GITLAB_API_PRIVATE_TOKEN')
+
   interval = ARGV.shift || 120
-  monitor = BuildMonitor.new interval: interval
+  monitor = BuildMonitor.new project_id, api_token, interval: interval
   monitor.start
 end
 # :nocov:
