@@ -1,4 +1,5 @@
 require 'test_helper'
+require_relative '../lib/build_fetcher'
 
 class BuildFetcherTest < Minitest::Test
   def setup

@@ -1,4 +1,5 @@
 require 'test_helper.rb'
+require_relative '../lib/loggers'
 
 class DummyLoggerTest < Minitest::Test
   def setup

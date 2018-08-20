@@ -1,4 +1,5 @@
 require 'test_helper'
+require_relative '../lib/build_monitor'
 
 class BuildMonitorTest < Minitest::Test
   def setup

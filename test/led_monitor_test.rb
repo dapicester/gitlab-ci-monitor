@@ -1,4 +1,5 @@
 require 'test_helper'
+require_relative '../lib/led_monitor'
 
 class LedMonitorTest < Minitest::Test
   def setup
