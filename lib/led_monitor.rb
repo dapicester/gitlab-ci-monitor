@@ -63,3 +63,34 @@ class LedMonitor
     end
   end
 end
+
+class MultiLedMonitor
+  def initialize(logger:)
+    @logger = logger
+  end
+
+  def close
+    @logger.info "Close led monitor".light_red
+  end
+
+  def close!
+    close
+  end
+
+  def all_off(leds)
+    @logger.info "Should turn off these leds: #{leds}".light_red
+  end
+
+  def turn_on(led)
+    @logger.info "Should turn in this led: #{led}".light_red
+  end
+
+  def buzz
+    @logger.info "Should buzz".light_red
+  end
+
+  def rapid_buzz(**args)
+    @logger.info "Should rapidly buzz: #{args.inspect}".light_red
+  end
+end
+

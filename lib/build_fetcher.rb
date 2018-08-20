@@ -16,16 +16,16 @@ class BuildFetcher
   class NetworkError < StandardError; end
 
   def initialize(project_id, api_token, branch, logger: DummyLogger.new)
-    @project_id = CGI.escape project_id
+    @project_id = project_id
     @api_token = api_token
     @branch = branch
     @logger = logger
   end
 
   def latest_build
-    @logger.info { 'Fetching pipelines ...' }
+    @logger.info { "#{@project_id.light_blue}: Fetching pipelines ..." }
 
-    pipelines_url = "#{BASE_URI}/projects/#{@project_id}/pipelines"
+    pipelines_url = "#{BASE_URI}/projects/#{CGI.escape @project_id}/pipelines"
     response = fetch pipelines_url
     pipelines = JSON.parse response.body, symbolize_names: true
 
@@ -35,7 +35,7 @@ class BuildFetcher
     detail_url = "#{pipelines_url}/#{latest[:id]}"
     response = fetch detail_url
     last_build = JSON.parse response.body, symbolize_names: true
-    @logger.debug { "Last build on #{@branch}: #{last_build.inspect.light_yellow}" }
+    @logger.debug { "#{@project_id.light_blue}: Last build on #{@branch}: #{last_build.inspect.light_yellow}" }
 
     last_build
   rescue SocketError, Timeout::Error => ex
@@ -52,11 +52,11 @@ class BuildFetcher
 
         http.request request
       end
-      @logger.debug { response }
+      @logger.debug { "#{@project_id.light_blue}: #{response }"}
 
       if response.code.to_i != 200
-        @logger.debug { response.body.inspect.light_yellow }
-        message = "#{response.message.red} (#{response.code.red}): #{response.body.underline}"
+        @logger.debug { "#{@project_id.light_blue}: #{response.body.inspect.light_yellow}" }
+        message = "#{@project_id.light_blue}: #{response.message.red} (#{response.code.red}): #{response.body.underline}"
         raise ServerError, message
       end
 
