@@ -1,5 +1,8 @@
 #!/usr/bin/env ruby
 
+# Suppress all warnings
+$VERBOSE = nil
+
 require_relative 'lib/build_monitor'
 require 'dotenv'
 
