@@ -9,6 +9,7 @@ class BuildMonitorTest < Minitest::Test
 
     @subject = BuildMonitor.new 'project_id',
                                 'api_token',
+                                'develop',
                                 interval: 120,
                                 logger: @logger,
                                 led_monitor: @led_monitor,
