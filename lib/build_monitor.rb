@@ -4,44 +4,55 @@ require_relative 'loggers'
 require_relative 'led_monitor'
 require_relative 'build_fetcher'
 
+def multi_logger_to(filename)
+  stdout_logger = Logger.new STDOUT
+  file_logger = Logger.new filename, 'daily'
+  stdout_logger.level = file_logger.level = Logger::INFO unless ENV['DEBUG']
+
+  MultiLogger.new file_logger, stdout_logger
+end
+
+def build_fetcher_for(project_id, api_token, branch, logger)
+    BuildFetcher.new project_id, api_token, branch, logger: @logger
+end
+
+def start_loop(monitor)
+  trap('SIGINT') do
+    monitor.close!
+    puts 'Bye!'
+    # TODO: use exit with at_exit signal handlers
+    exit!
+  end
+
+  loop do
+    yield
+  end
+end
+
+def wait(seconds, logger)
+  logger.info { "Next check in #{seconds} secs" }
+  sleep seconds
+end
+
 # Use LEDs to monitor the last build status.
 class BuildMonitor
   def initialize(project_id, api_token, branch, interval:, **options)
     @interval = interval.to_i
 
-    @logger = options.fetch(:logger) do
-      # :nocov:
-      stdout_logger = Logger.new STDOUT
-      file_logger = Logger.new 'monitor.log', 'daily'
-      stdout_logger.level = file_logger.level = Logger::INFO unless ENV['DEBUG']
-      MultiLogger.new file_logger, stdout_logger
-      # :nocov:
-    end
-
+    @logger = options.fetch(:logger) { multi_logger_to 'monitor.log' }
     @monitor = options.fetch(:led_monitor) { LedMonitor.new logger: @logger }
-    @build_fetcher = options.fetch(:build_fetcher) do
-      BuildFetcher.new project_id, api_token, branch, logger: @logger
-    end
+    @build_fetcher = options.fetch(:build_fetcher) { build_fetcher_for project_id, api_token, branch, @logger }
 
     @status = 'success' # assume we are in a good state
     @error = false
   end
 
-  # :nocov:
   def start
-    trap('SIGINT') do
-      @monitor.close!
-      puts 'Bye!'
-      # TODO: use exit with at_exit signal handlers
-      exit!
-    end
-
-    loop do
+    start_loop(@monitor) do
       check_latest
-      wait @interval
+      wait @interval, @logger
     end
   end
-  # :nocov:
 
   def check_latest
     latest_build = @build_fetcher.latest_build
@@ -93,62 +104,35 @@ class BuildMonitor
   def was_failed?
     @prev_status == 'failed'
   end
-
-  # :nocov:
-  def wait(seconds)
-    @logger.info { "Next check in #{seconds} secs" }
-    sleep seconds
-  end
-  # :nocov:
 end
 
 class MultiMonitor
   def initialize(projects, api_token, interval:, **options)
     @interval = interval
 
-    # TODO: DRY
-    @logger = options.fetch(:logger) do
-      # :nocov:
-      stdout_logger = Logger.new STDOUT
-      file_logger = Logger.new 'multi-monitor.log', 'daily'
-      stdout_logger.level = file_logger.level = Logger::INFO unless ENV['DEBUG']
-      MultiLogger.new file_logger, stdout_logger
-      # :nocov:
-    end
-
-    # XXX: this is shared
+    @logger = options.fetch(:logger) { multi_logger_to 'multi-monitor.log' }
     @monitor = options.fetch(:led_monitor) { MultiLedMonitor.new logger: @logger }
-
     @projects = projects.map do |config|
-      [
-        config[:name],
-        {
-          build_fetcher: BuildFetcher.new(config[:name], api_token, config[:branch], logger: @logger),
-          leds: config[:leds],
-          status: 'success',
-          error: false
-        }
-      ]
+      name, branch, leds = config.values_at :name, :branch, :leds
+      state = {
+        build_fetcher: build_fetcher_for(name, api_token, branch, logger: @logger),
+        leds: leds,
+        status: 'success',
+        error: false
+      }
+
+      [ name, state ]
     end.to_h
   end
 
-  # :nocov:
   def start
-    trap('SIGINT') do
-      @monitor.close!
-      puts 'Bye!'
-      # TODO: use exit with at_exit signal handlers
-      exit!
-    end
-
-    loop do
+    start_loop(@monitor) do
       @projects.keys.each do |name|
         check_latest name
-        wait @interval
+        wait @interval, @logger
       end
     end
   end
-  # :nocov:
 
   def check_latest(name)
     project = @projects[name]
@@ -217,12 +201,4 @@ class MultiMonitor
   def was_failed?(name)
     prev_status_of(name) == 'failed'
   end
-
-  # XXX: DRY
-  # :nocov:
-  def wait(seconds)
-    @logger.info { "Next check in #{seconds} secs" }
-    sleep seconds
-  end
-  # :nocov:
 end
