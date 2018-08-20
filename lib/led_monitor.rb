@@ -6,15 +6,9 @@ require_relative 'loggers'
 
 # Controls LEDs on an Arduino board with Firmata.
 class LedMonitor
-  LEDS = {
-    red: 9,
-    green: 10,
-    yellow: 11
-  }.freeze
-
-  BUZZER = 5
-
-  def initialize(logger: DummyLogger.new)
+  def initialize(red: 9, green: 10, yellow: 11, buzzer: 5, logger: DummyLogger.new)
+    @leds = { red: red, green: green, yellow: yellow }
+    @buzzer = buzzer
     @logger = logger
 
     if block_given?
@@ -27,7 +21,7 @@ class LedMonitor
     end
 
     @logger.info { "Connected with Firmata version #{@arduino.version}" }
-    LEDS.keys.each { |led| turn_on led }
+    @leds.keys.each { |led| turn_on led }
   end
 
   def close
@@ -38,7 +32,7 @@ class LedMonitor
   # :nocov:
   def close!
     # workaround for "log writing failed. can't be called from trap context"
-    LEDS.values.each { |pin| @arduino.digital_write pin, false }
+    @leds.values.each { |pin| @arduino.digital_write pin, false }
     sleep 0.1
     @arduino.close
   end
@@ -46,19 +40,19 @@ class LedMonitor
 
   def all_off
     @logger.debug { 'Turning off all leds' }
-    LEDS.values.each { |pin| @arduino.digital_write pin, false }
+    @leds.values.each { |pin| @arduino.digital_write pin, false }
   end
 
   def turn_on(led)
     @logger.debug { "Turning on #{led} led" }
-    @arduino.digital_write LEDS[led], true
+    @arduino.digital_write @leds[led], true
   end
 
   def buzz(duration = 0.5)
     @logger.debug { "Buzzing for #{duration} sec" }
-    @arduino.digital_write BUZZER, true
+    @arduino.digital_write @buzzer, true
     sleep duration
-    @arduino.digital_write BUZZER, false
+    @arduino.digital_write @buzzer, false
   end
 
   def rapid_buzz(count: 2, duration: 0.05)

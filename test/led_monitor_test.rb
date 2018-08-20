@@ -3,6 +3,8 @@ require_relative '../lib/led_monitor'
 
 class LedMonitorTest < Minitest::Test
   def setup
+    @leds = { red: 9, green: 10, yellow: 11 }
+    @buzzer = 5
     @arduino = Minitest::Mock.new
     with_all_leds { |_, pin| expect_digital_write pin, true }
     @subject = LedMonitor.new { @arduino }
@@ -60,7 +62,7 @@ class LedMonitorTest < Minitest::Test
   private
 
   def with_all_leds(&blk)
-    LedMonitor::LEDS.each(&blk)
+    @leds.each(&blk)
   end
 
   def expect_digital_write(pin, value)
@@ -68,8 +70,8 @@ class LedMonitorTest < Minitest::Test
   end
 
   def expect_buzz
-    expect_digital_write LedMonitor::BUZZER, true
-    expect_digital_write LedMonitor::BUZZER, false
+    expect_digital_write @buzzer, true
+    expect_digital_write @buzzer, false
   end
 
   def stub_sleep
