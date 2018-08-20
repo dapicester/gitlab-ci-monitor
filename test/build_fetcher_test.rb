@@ -5,7 +5,7 @@ class BuildFetcherTest < Minitest::Test
   def setup
     project_id = 'company/project'
     @url = "#{BuildFetcher::BASE_URI}/projects/#{CGI.escape project_id}/pipelines"
-    @subject = BuildFetcher.new project_id, 'api_token'
+    @subject = BuildFetcher.new project_id, 'api_token', 'develop'
   end
 
   def test_latest_build

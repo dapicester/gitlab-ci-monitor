@@ -15,13 +15,14 @@ class BuildFetcher
   class ServerError < StandardError; end
   class NetworkError < StandardError; end
 
-  def initialize(project_id, api_token, logger: DummyLogger.new)
+  def initialize(project_id, api_token, branch, logger: DummyLogger.new)
     @project_id = CGI.escape project_id
     @api_token = api_token
+    @branch = branch
     @logger = logger
   end
 
-  def latest_build(branch = 'develop')
+  def latest_build
     @logger.info { 'Fetching pipelines ...' }
 
     pipelines_url = "#{BASE_URI}/projects/#{@project_id}/pipelines"
@@ -29,12 +30,12 @@ class BuildFetcher
     pipelines = JSON.parse response.body, symbolize_names: true
 
     # returned build are already sorted
-    latest = pipelines.find { |el| el[:ref] == branch }
+    latest = pipelines.find { |el| el[:ref] == @branch }
 
     detail_url = "#{pipelines_url}/#{latest[:id]}"
     response = fetch detail_url
     last_build = JSON.parse response.body, symbolize_names: true
-    @logger.debug { "Last build on #{branch}: #{last_build.inspect.light_yellow}" }
+    @logger.debug { "Last build on #{@branch}: #{last_build.inspect.light_yellow}" }
 
     last_build
   rescue SocketError, Timeout::Error => ex

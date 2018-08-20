@@ -6,7 +6,7 @@ require_relative 'build_fetcher'
 
 # Use LEDs to monitor the last build status.
 class BuildMonitor
-  def initialize(project_id, api_token, interval:, **options)
+  def initialize(project_id, api_token, branch, interval:, **options)
     @interval = interval.to_i
 
     @logger = options.fetch(:logger) do
@@ -19,7 +19,9 @@ class BuildMonitor
     end
 
     @monitor = options.fetch(:led_monitor) { LedMonitor.new logger: @logger }
-    @build_fetcher = options.fetch(:build_fetcher) { BuildFetcher.new project_id, api_token, logger: @logger }
+    @build_fetcher = options.fetch(:build_fetcher) do
+      BuildFetcher.new project_id, api_token, branch, logger: @logger
+    end
 
     @status = 'success' # assume we are in a good state
     @error = false
