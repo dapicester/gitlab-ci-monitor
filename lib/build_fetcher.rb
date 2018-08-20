@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'colorize'
+require 'cgi'
 require 'json'
 require 'net/http'
 require 'uri'
@@ -15,7 +16,7 @@ class BuildFetcher
   class NetworkError < StandardError; end
 
   def initialize(project_id, api_token, logger: DummyLogger.new)
-    @project_id = project_id
+    @project_id = CGI.escape project_id
     @api_token = api_token
     @logger = logger
   end

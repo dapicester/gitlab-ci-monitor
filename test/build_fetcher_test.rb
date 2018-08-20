@@ -3,8 +3,8 @@ require_relative '../lib/build_fetcher'
 
 class BuildFetcherTest < Minitest::Test
   def setup
-    project_id = 'project_id'
-    @url = "#{BuildFetcher::BASE_URI}/projects/#{project_id}/pipelines"
+    project_id = 'company/project'
+    @url = "#{BuildFetcher::BASE_URI}/projects/#{CGI.escape project_id}/pipelines"
     @subject = BuildFetcher.new project_id, 'api_token'
   end
 
