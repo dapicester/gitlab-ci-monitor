@@ -3,7 +3,7 @@
 require 'colorize'
 require 'cgi'
 require 'json'
-require 'net/http'
+require 'net/https'
 require 'uri'
 
 require_relative 'loggers'
@@ -11,6 +11,7 @@ require_relative 'loggers'
 # Fetches build info from Gitlab API.
 class BuildFetcher
   BASE_URI = 'https://gitlab.com/api/v4'
+  NUM_RETRIES = 3
 
   class ServerError < StandardError; end
   class NetworkError < StandardError; end
@@ -25,6 +26,8 @@ class BuildFetcher
   def latest_build
     @logger.info { "#{@project_id.light_blue}: Fetching pipelines ..." }
 
+    retries ||= 0
+
     pipelines_url = "#{BASE_URI}/projects/#{CGI.escape @project_id}/pipelines"
     response = fetch pipelines_url
     pipelines = JSON.parse response.body, symbolize_names: true
@@ -38,7 +41,11 @@ class BuildFetcher
     @logger.debug { "#{@project_id.light_blue}: Last build on #{@branch}: #{last_build.inspect.light_yellow}" }
 
     last_build
-  rescue SocketError, Timeout::Error => ex
+  rescue SocketError, OpenSSL::OpenSSLError, Timeout::Error => ex
+    if (retries += 1) < NUM_RETRIES
+      @logger.warn { "#{@project_id.light_blue}: #{ex.message}, retrying ..." }
+      retry
+    end
     raise NetworkError, ex
   end
 
