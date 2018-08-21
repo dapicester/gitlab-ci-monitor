@@ -3,4 +3,5 @@
 .ruby-version
 monitor.log*
 multi-monitor.log*
+projects.yml
 coverage/
