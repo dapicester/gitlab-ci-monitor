@@ -46,6 +46,8 @@ class BuildFetcher
       @logger.warn { "#{@project_id.light_blue}: #{ex.message}, retrying ..." }
       retry
     end
+
+    @logger.error { "#{@project_id.light_blue}: failed" }
     raise NetworkError, ex
   end
 

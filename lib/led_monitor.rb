@@ -65,12 +65,24 @@ class LedMonitor
 end
 
 class MultiLedMonitor
-  def initialize(logger:)
+  def initialize(logger: DummyLogger.new)
     @logger = logger
+
+    if block_given?
+      @arduino = yield
+    else
+      #:nocov:
+      @logger.debug { 'Connecting to arduino ...' }
+      @arduino = ArduinoFirmata.connect
+      #:nocov:
+    end
+
+    @logger.info { "Connected with Firmata version #{@arduino.version}" }
   end
 
   def close
-    @logger.info "Close led monitor".light_red
+    @logger.debug { 'Closing Firmata connection' }
+    @arduino.close
   end
 
   def close!
@@ -78,19 +90,27 @@ class MultiLedMonitor
   end
 
   def all_off(leds)
-    @logger.info "Should turn off these leds: #{leds}".light_red
+    @logger.debug { "Turning off leds #{leds.values}".light_red }
+    leds.values.each { |pin| @arduino.digital_write pin, false }
   end
 
   def turn_on(led)
-    @logger.info "Should turn in this led: #{led}".light_red
+    @logger.debug { "Turning on led #{led}".light_red }
+    @arduino.digital_write led, true
   end
 
-  def buzz
-    @logger.info "Should buzz".light_red
+  def buzz(pin, duration = 0.5)
+    @logger.debug { "Buzzing on pin #{pin}".light_red }
+    @arduino.digital_write pin, true
+    sleep duration
+    @arduino.digital_write pin, false
   end
 
-  def rapid_buzz(**args)
-    @logger.info "Should rapidly buzz: #{args.inspect}".light_red
+  def rapid_buzz(pin, count: 2, duration: 0.05)
+    @logger.debug { "Buzzing on pin #{pin} #{count} times".light_red }
+    count.times do
+      buzz pin, duration
+      sleep duration
+    end
   end
 end
-

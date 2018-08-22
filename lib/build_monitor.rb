@@ -113,16 +113,19 @@ class MultiMonitor
     @logger = options.fetch(:logger) { multi_logger_to 'multi-monitor.log' }
     @monitor = options.fetch(:led_monitor) { MultiLedMonitor.new logger: @logger }
     @projects = projects.map do |config|
-      name, branch, leds = config.values_at :name, :branch, :leds
+      name, branch, pins = config.values_at :name, :branch, :pins
       state = {
         build_fetcher: build_fetcher_for(name, api_token, branch, logger: @logger),
-        leds: leds,
+        pins: pins,
         status: 'success',
         error: false
       }
 
       [ name, state ]
     end.to_h
+
+    green_leds = @projects.values.map { |state| state[:pins][:green] }.flatten.uniq
+    green_leds.each { |pin| @monitor.turn_on pin }
   end
 
   def start
@@ -136,6 +139,7 @@ class MultiMonitor
 
   def check_latest(name)
     project = @projects[name]
+    buzzer_pin = buzzer_of name
     latest_build = project[:build_fetcher].latest_build
 
     project[:error] = false
@@ -152,26 +156,30 @@ class MultiMonitor
     @monitor.turn_on led_of name, led
 
     if failed? name
-      @monitor.buzz if was_success? name
+      @monitor.buzz buzzer_pin if was_success? name
       @logger.info { "#{name.light_blue}: Blame: #{latest_build[:sha][0, 8].light_yellow} by #{latest_build[:user][:name].light_blue}" }
     elsif success?(name) && was_failed?(name)
-      @monitor.rapid_buzz
+      @monitor.rapid_buzz buzzer_pin
       @logger.info { "#{name.light_blue}: Praise: #{latest_build[:sha][0, 8].light_yellow} by #{latest_build[:user][:name].light_blue}" }
     end
   rescue BuildFetcher::ServerError, BuildFetcher::NetworkError => ex
     @logger.error ex.message
     @monitor.all_off all_leds_of name
     %i(yellow red).each { |color| @monitor.turn_on led_of name, color }
-    @monitor.rapid_buzz count: 3, duration: 0.3 unless project[:error]
+    @monitor.rapid_buzz buzzer_pin, count: 3, duration: 0.3 unless project[:error]
     project[:error] = true
   end
 
   def all_leds_of(name)
-    @projects[name][:leds]
+    @projects[name][:pins].select { |k, _| %i(red yellow green).include? k }
   end
 
   def led_of(name, color)
     all_leds_of(name)[color]
+  end
+
+  def buzzer_of(name)
+    @projects[name][:pins][:buzz]
   end
 
   def status_of(name)
