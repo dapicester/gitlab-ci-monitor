@@ -23,8 +23,19 @@ class BuildMonitorTest < Minitest::Test
   end
 
   def test_check_latest_pending
+    refute @subject.instance_variable_get :@only_red_green
     with_latest :pending do
       expect_led :yellow
+    end
+  end
+
+  def test_check_latest_pending_only_red_green
+    # flip the flag value
+    @subject.instance_variable_set :@only_red_green, true
+    assert @subject.instance_variable_get :@only_red_green
+
+    with_latest :pending do
+      expect_led nil
     end
   end
 
@@ -78,13 +89,14 @@ class BuildMonitorTest < Minitest::Test
     else
       @build_fetcher.expect :latest_build, get_build(status_or_callable)
     end
-    @led_monitor.expect :all_off, nil
     yield
     @subject.check_latest
+    assert_mock @build_fetcher
   end
 
   def expect_led(led)
-    @led_monitor.expect :turn_on, nil, [led]
+    @led_monitor.expect :all_off, nil
+    @led_monitor.expect :turn_on, nil, [led] unless led.nil?
   end
 
   def expect_buzz

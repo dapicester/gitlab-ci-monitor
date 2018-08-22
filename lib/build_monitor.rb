@@ -36,8 +36,9 @@ end
 
 # Use LEDs to monitor the last build status.
 class BuildMonitor
-  def initialize(project_id, api_token, branch, interval:, **options)
+  def initialize(project_id, api_token, branch, interval:, only_red_green: false, **options)
     @interval = interval.to_i
+    @only_red_green = only_red_green
 
     @logger = options.fetch(:logger) { multi_logger_to 'monitor.log' }
     @monitor = options.fetch(:led_monitor) { LedMonitor.new logger: @logger }
@@ -67,6 +68,8 @@ class BuildMonitor
           end
 
     @logger.info { "Build status is #{@status.colorize(led)}" }
+    return if pending? && @only_red_green
+
     @monitor.all_off
     @monitor.turn_on led
 
@@ -106,8 +109,9 @@ class BuildMonitor
 end
 
 class MultiMonitor
-  def initialize(projects, api_token, interval:, **options)
+  def initialize(projects, api_token, interval:, only_red_green: false, **options)
     @interval = interval
+    @only_red_green = only_red_green
 
     @logger = options.fetch(:logger) { multi_logger_to 'multi-monitor.log' }
     @monitor = options.fetch(:led_monitor) { MultiLedMonitor.new logger: @logger }
@@ -151,6 +155,8 @@ class MultiMonitor
           end
 
     @logger.info { "#{name.light_blue}: Build status is #{project[:status].colorize(led)}" }
+    return if pending?(name) && @only_red_green
+
     @monitor.all_off all_leds_of name
     @monitor.turn_on led_of name, led
 
