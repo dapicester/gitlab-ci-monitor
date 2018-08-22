@@ -12,6 +12,7 @@ require_relative 'loggers'
 class BuildFetcher
   BASE_URI = 'https://gitlab.com/api/v4'
   NUM_RETRIES = 3
+  RETRY_INTERVAL = 3
 
   class ServerError < StandardError; end
   class NetworkError < StandardError; end
@@ -43,7 +44,8 @@ class BuildFetcher
     last_build
   rescue SocketError, OpenSSL::OpenSSLError, Timeout::Error => ex
     if (retries += 1) < NUM_RETRIES
-      @logger.warn { "#{@project_id.light_blue}: #{ex.message}, retrying ..." }
+      @logger.warn { "#{@project_id.light_blue}: #{ex.class}: #{ex.message}, retrying ..." }
+      sleep RETRY_INTERVAL
       retry
     end
 
