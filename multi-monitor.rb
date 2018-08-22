@@ -15,5 +15,5 @@ interval = ARGV.shift || 60
 
 projects = load_projects 'projects.yml'
 
-monitor = MultiMonitor.new projects, api_token, interval: interval
+monitor = MultiMonitor.new projects, api_token, interval: interval.to_i
 monitor.start
