@@ -77,8 +77,7 @@ class BuildMonitor
       @monitor.rapid_buzz
       @logger.info { "Praise: #{latest_build[:sha][0, 8].light_yellow} by #{latest_build[:user][:name].light_blue}" }
     end
-  rescue BuildFetcher::ServerError, BuildFetcher::NetworkError => ex
-    @logger.error ex.message
+  rescue BuildFetcher::ServerError, BuildFetcher::NetworkError
     @monitor.all_off
     %i(yellow red).each { |ld| @monitor.turn_on ld }
     @monitor.rapid_buzz count: 3, duration: 0.3 unless @error
@@ -162,8 +161,7 @@ class MultiMonitor
       @monitor.rapid_buzz buzzer_pin
       @logger.info { "#{name.light_blue}: Praise: #{latest_build[:sha][0, 8].light_yellow} by #{latest_build[:user][:name].light_blue}" }
     end
-  rescue BuildFetcher::ServerError, BuildFetcher::NetworkError => ex
-    @logger.error ex.message
+  rescue BuildFetcher::ServerError, BuildFetcher::NetworkError
     @monitor.all_off all_leds_of name
     %i(yellow red).each { |color| @monitor.turn_on led_of name, color }
     @monitor.rapid_buzz buzzer_pin, count: 3, duration: 0.3 unless project[:error]
