@@ -3,6 +3,9 @@ SimpleCov.start do
   add_filter '/test/'
 end
 
+require 'codecov'
+SimpleCov.formatter = SimpleCov::Formatter::Codecov
+
 require 'byebug'
 require 'minitest/autorun'
 require 'webmock/minitest'

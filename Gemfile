@@ -10,6 +10,7 @@ gem 'rake'
 
 group :test do
   gem 'byebug'
+  gem 'codecov', require: false
   gem 'minitest'
   gem 'simplecov', require: false
   gem 'webmock'
