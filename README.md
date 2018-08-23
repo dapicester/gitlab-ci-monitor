@@ -1,5 +1,6 @@
 [![Stories in Ready](https://badge.waffle.io/dapicester/gitlab-ci-monitor.png?label=ready&title=Ready)](https://waffle.io/dapicester/gitlab-ci-monitor?utm_source=badge)
 [![Build Status](https://travis-ci.com/dapicester/gitlab-ci-monitor.svg?branch=master)](https://travis-ci.com/dapicester/gitlab-ci-monitor)
+[![Coverage](https://codecov.io/gh/dapicester/gitlab-ci-monitor/branch/master/graph/badge.svg)](https://codecov.io/gh/dapicester/gitlab-ci-monitor)
 
 # GitLab CI Monitor
 
