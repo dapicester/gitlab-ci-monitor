@@ -6,6 +6,7 @@ ruby '~> 2.5.0'
 gem 'arduino_firmata'
 gem 'colorize'
 gem 'dotenv'
+gem 'rake'
 
 group :test do
   gem 'byebug'
