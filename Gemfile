@@ -12,6 +12,7 @@ group :test do
   gem 'byebug'
   gem 'codecov', require: false
   gem 'minitest'
+  gem 'minitest-reporters', require: 'false'
   gem 'simplecov', require: false
   gem 'webmock'
 end
