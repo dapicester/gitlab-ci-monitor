@@ -9,7 +9,7 @@ running Firmata.
 
 ## How it works
 
-The script periodically polls the GitLab API and retrieves the last build
+The scripts periodically poll the GitLab API and retrieve the last build
 status, then:
 
 - the green led is turned on if the build is successful
@@ -17,6 +17,8 @@ status, then:
 - the red led is turned on when the build is failed
 - on the first failure a long buzz is emitted
 - when the buid is successful again two short buzzes are emitted
+- on network errors three buzzes are emitted and both red and yellow lights
+  are turned on
 
 ![arduino photo](arduino.jpg "Example of Arduino connections")
 
@@ -56,6 +58,35 @@ You can specify a time interval in seconds, the default is `120` (two minutes).
 For example, to poll the build status every five minutes:
 
     $ ./monitor.rb 300
+
+## Multi-project setup
+
+One can easily monitor many projects at once using the `multi-monitor.rb` script.
+Create a `projects.yml` file with a content like this:
+
+```yaml
+---
+- name: company/project1
+  branch: develop
+  pins:
+    red: 11
+    green: 12
+    yellow: 10
+    buzz: 7
+- name: company/project2
+  branch: master
+  pins:
+    red: 3
+    green: 4
+    yellow: 5
+    buzz: 7
+```
+
+Then launch the script:
+
+    $ ./multi-monitor.rb
+
+The script accepts the same options and arguments as `monitor.rb`.
 
 ## Notes
 
