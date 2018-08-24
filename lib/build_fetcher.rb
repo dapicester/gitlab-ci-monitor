@@ -11,8 +11,8 @@ require_relative 'loggers'
 # Fetches build info from Gitlab API.
 class BuildFetcher
   BASE_URI = 'https://gitlab.com/api/v4'
-  NUM_RETRIES = 3
-  RETRY_INTERVAL = 3
+  NUM_RETRIES = 5
+  RETRY_INTERVAL = 5 # seconds
 
   class ServerError < StandardError; end
   class NetworkError < StandardError; end
