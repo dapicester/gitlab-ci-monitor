@@ -66,11 +66,13 @@ class BuildFetcherTest < Minitest::Test
   end
 
   def test_latest_build_failure
-    [SocketError, Timeout::Error].each do |exception|
-      stub_request(:any, @url).to_raise(exception)
+    @subject.stub :sleep, nil do
+      BuildFetcher::RETRY_EXCEPTIONS.each do |exception|
+        stub_request(:any, @url).to_raise(exception)
 
-      assert_raises(BuildFetcher::NetworkError) do
-        @subject.latest_build
+        assert_raises(BuildFetcher::NetworkError) do
+          @subject.latest_build
+        end
       end
     end
   end
