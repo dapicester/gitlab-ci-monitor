@@ -14,10 +14,8 @@ class LedMonitor
     if block_given?
       @arduino = yield
     else
-      #:nocov:
       @logger.debug { 'Connecting to arduino ...' }
       @arduino = ArduinoFirmata.connect
-      # :nocov:
     end
 
     @logger.info { "Connected with Firmata version #{@arduino.version}" }
@@ -29,14 +27,12 @@ class LedMonitor
     @arduino.close
   end
 
-  # :nocov:
   def close!
     # workaround for "log writing failed. can't be called from trap context"
     @leds.values.each { |pin| @arduino.digital_write pin, false }
     sleep 0.1
     @arduino.close
   end
-  # :nocov:
 
   def all_off
     @logger.debug { 'Turning off all leds' }
@@ -71,10 +67,8 @@ class MultiLedMonitor
     if block_given?
       @arduino = yield
     else
-      #:nocov:
       @logger.debug { 'Connecting to arduino ...' }
       @arduino = ArduinoFirmata.connect
-      #:nocov:
     end
 
     @logger.info { "Connected with Firmata version #{@arduino.version}" }
