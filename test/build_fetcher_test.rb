@@ -13,7 +13,7 @@ class BuildFetcherTest < Minitest::Test
       {
         id: 47,
         status: 'pending',
-        ref: 'master',
+        ref: 'develop',
         sha: 'a91957a858320c0e17f3a0eca7cfacbff50ea29a'
       },
       {
@@ -23,10 +23,12 @@ class BuildFetcherTest < Minitest::Test
         sha: 'eb94b618fb5865b26e80fdd8ae531b7a63ad851a'
       }
     ]
-    stub_request(:get, @url).to_return(status: 200, body: pipelines.to_json)
+    stub_request(:get, @url)
+      .with(query: { 'ref' => 'develop' })
+      .to_return(status: 200, body: pipelines.to_json)
 
     detail = {
-      id: 48,
+      id: 47,
       status: 'pending',
       ref: 'develop',
       sha: 'a91957a858320c0e17f3a0eca7cfacbff50ea29a',
@@ -58,7 +60,9 @@ class BuildFetcherTest < Minitest::Test
   end
 
   def test_latest_build_error
-    stub_request(:get, @url).to_return(status: [401, 'Unauthorized'], body: 'Test stub!')
+    stub_request(:get, @url)
+      .with(query: { 'ref' => 'develop' })
+      .to_return(status: [401, 'Unauthorized'], body: 'Test stub!')
 
     assert_raises(BuildFetcher::ServerError) do
       @subject.latest_build
@@ -68,7 +72,9 @@ class BuildFetcherTest < Minitest::Test
   def test_latest_build_failure
     @subject.stub :sleep, nil do
       BuildFetcher::RETRY_EXCEPTIONS.each do |exception|
-        stub_request(:any, @url).to_raise(exception)
+        stub_request(:any, @url)
+          .with(query: { 'ref' => 'develop' })
+          .to_raise(exception)
 
         assert_raises(BuildFetcher::NetworkError) do
           @subject.latest_build
