@@ -33,6 +33,7 @@ class BuildFetcher
     @logger.info { "#{@project_id.light_blue}: Fetching pipelines ..." }
 
     retries ||= 0
+    interval ||= 0
 
     pipelines_url = "#{BASE_URI}/projects/#{CGI.escape @project_id}/pipelines"
     response = fetch "#{pipelines_url}?ref=#{CGI.escape @branch}"
@@ -50,8 +51,9 @@ class BuildFetcher
     last_build
   rescue *RETRY_EXCEPTIONS => ex
     if (retries += 1) < NUM_RETRIES
-      @logger.warn { "#{@project_id.light_blue}: #{ex.class}: #{ex.message}, retrying ..." }
-      sleep RETRY_INTERVAL
+      interval += RETRY_INTERVAL
+      @logger.warn { "#{@project_id.light_blue}: #{ex.class}: #{ex.message}, retrying in #{interval} (#{retries}/#{NUM_RETRIES})" }
+      sleep interval
       retry
     end
 
