@@ -35,11 +35,12 @@ class BuildFetcher
     retries ||= 0
 
     pipelines_url = "#{BASE_URI}/projects/#{CGI.escape @project_id}/pipelines"
-    response = fetch pipelines_url
+    response = fetch "#{pipelines_url}?ref=#{CGI.escape @branch}"
     pipelines = JSON.parse response.body, symbolize_names: true
 
     # returned build are already sorted
-    latest = pipelines.find { |el| el[:ref] == @branch }
+    latest = pipelines.first
+    @logger.debug { "#{@project_id.light_blue}: Last pipeline on #{@branch}: #{latest.inspect.light_yellow}" }
 
     detail_url = "#{pipelines_url}/#{latest[:id]}"
     response = fetch detail_url
