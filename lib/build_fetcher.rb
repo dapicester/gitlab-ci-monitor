@@ -69,10 +69,10 @@ class BuildFetcher
 
         http.request request
       end
-      @logger.debug { "#{@project_id.light_blue}: #{response }"}
+      @logger.debug { "#{@project_id.light_blue}: #{response.code.red} #{response.body.light_yellow}"}
 
       if response.code.to_i != 200
-        @logger.debug { "#{@project_id.light_blue}: #{response.body.inspect.light_yellow}" }
+        @logger.debug { "#{@project_id.light_blue}: #{response.body.light_yellow}" }
         message = "#{@project_id.light_blue}: #{response.message.red} (#{response.code.red}): #{response.body.underline}"
         raise ServerError, message
       end
