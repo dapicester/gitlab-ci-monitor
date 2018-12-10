@@ -16,7 +16,8 @@ class BuildFetcher
   RETRY_EXCEPTIONS = [
     SocketError,
     OpenSSL::OpenSSLError,
-    Timeout::Error
+    Timeout::Error,
+    Errno::ETIMEDOUT,
   ]
 
   class ServerError < StandardError; end
